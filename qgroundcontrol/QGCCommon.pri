@@ -46,6 +46,7 @@ linux {
         DEFINES += __STDC_LIMIT_MACROS
         DEFINES += QGC_ENABLE_BLUETOOTH
         DEFINES += QGC_GST_TAISYNC_ENABLED
+                    -Wno-unused-but-set-variable \ # eigen & QGCTileCacheWorker.cpp
         DEFINES += QGC_GST_MICROHARD_ENABLED
         QMAKE_CXXFLAGS += -Wno-address-of-packed-member
         QMAKE_CXXFLAGS += -Wno-unused-command-line-argument

@@ -7,6 +7,7 @@ on:
       - 'master'
       - 'Stable*'
       - 'android*'
+      - 'branding*'
     tags:
       - 'v*'
   pull_request:
@@ -96,11 +97,11 @@ jobs:
         id:   git-branch-name
         uses: EthanSK/git-branch-name-action@v1
 
-      - name: Update android manifest
-        run: |
-          if [ $GIT_BRANCH_NAME != "Stable*" ]; then
-            ${SOURCE_DIR}/tools/update_android_manifest_package.sh ${GIT_BRANCH_NAME}
-          fi
+      #- name: Update android manifest
+      #  run: |
+      #    if [ $GIT_BRANCH_NAME != "Stable*" ]; then
+      #      ${SOURCE_DIR}/tools/update_android_manifest_package.sh ${GIT_BRANCH_NAME}
+      #    fi
       - name: Build
         working-directory: ${{ runner.temp }}/shadow_build_dir
         env:
@@ -110,7 +111,7 @@ jobs:
           ANDROID_NDK_LATEST_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           ANDROID_NDK: ${{ steps.setup-ndk.outputs.ndk-path }}
         run:  |
-            qmake -r ${SOURCE_DIR}/qgroundcontrol.pro -spec android-clang CONFIG+=${BUILD_TYPE} CONFIG+=installer ANDROID_ABIS="arm64-v8a"
+            qmake -r ${SOURCE_DIR}/qgroundcontrol/qgroundcontrol.pro -spec android-clang CONFIG+=${BUILD_TYPE} CONFIG+=installer ANDROID_ABIS="arm64-v8a"
             make -j2
       - name: ccache post-run
         run:  ccache -s

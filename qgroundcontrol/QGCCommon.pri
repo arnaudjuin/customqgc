@@ -98,6 +98,8 @@ linux {
         CONFIG  += x86_64
         CONFIG  -= x86
         QMAKE_CXXFLAGS += -fvisibility=hidden
+        #-- Disable annoying warnings comming from mavlink.h
+        QMAKE_CXXFLAGS += -Wno-address-of-packed-member
         QMAKE_CXXFLAGS_WARN_ON += -Werror \
             -Wno-unused-parameter \         # gst-plugins-good
             -Wno-unused-but-set-variable \ # eigen & QGCTileCacheWorker.cpp

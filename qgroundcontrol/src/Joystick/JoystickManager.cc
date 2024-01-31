@@ -13,10 +13,10 @@
 
 #include <QQmlEngine>
 
-#ifndef __mobile__
+/* #ifndef __mobile__
     #include "JoystickSDL.h"
     #define __sdljoystick__
-#endif
+#endif */
 
 #ifndef FIXME_QT6_DISABLE_ANDROID_JOYSTICK
 #ifdef __android__

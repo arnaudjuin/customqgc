@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<RCC>
+    <qresource prefix="custom/img">
+        <file alias="LogoDark.png">../qgroundcontrol/custom/res/Images/Logo-Dark.png</file>
+        <file alias="LogoLight.png">../qgroundcontrol/custom/res/Images/Logo-Light.png</file>
+    </qresource>
+    <qresource prefix="/qml">
+        <file alias="QGroundControl/FlightDisplay/FlyViewToolBar.qml">../qgroundcontrol/custom/res/CustomFlyViewToolBar.qml</file>
+    </qresource>
+    <qresource prefix="/fonts">
+        <file alias="opensans">../qgroundcontrol/custom/res/Fonts/bebasneuepro-exprg.ttf</file>
+    </qresource>
+</RCC>

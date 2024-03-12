@@ -1,12 +1,11 @@
-name: Windows Release
+name: MacOS Release
 
 on:
-  push:
+  push: 
     branches:
       - 'master'
       - 'Stable*'
-      - 'feat/*'
-
+      - 'feat/custom'
     tags:
       - 'v*'
     paths-ignore:
@@ -19,34 +18,23 @@ on:
 
 defaults:
   run:
-    shell: cmd
+    shell: bash
 
 env:
   SOURCE_DIR:   ${{ github.workspace }}
-  QT_VERSION:   6.6.*
-  ARTIFACT:     QGroundControl-installer.exe
+  QT_VERSION:   6.6.1
+  ARTIFACT:     QGroundControl.dmg
   BUILD_TYPE:   ${{ fromJSON('["DailyBuild", "StableBuild"]')[ github.ref_type == 'tag' || contains(github.ref, 'Stable_' ) ] }}
 
 jobs:
   build:
-    runs-on:  windows-2019
+    runs-on:  macos-latest
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
         with:
           submodules: recursive
-
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          create-symlink: true
-          key: ${{ runner.os }}-Release
-          restore-keys: ${{ runner.os }}-Release
-          max-size: "2G"
-          append-timestamp: false
-          variant: "sccache"
-        if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
 
       - name: Get all tags for correct version determination
         working-directory:  ${{ github.workspace }}
@@ -58,60 +46,78 @@ jobs:
         with:
           version:      ${{ env.QT_VERSION }}
           aqtversion:   ==3.1.*
-          host:         windows
+          host:         mac
           target:       desktop
-          arch:         win64_msvc2019_64
           dir:          ${{ runner.temp }}
-          modules:      qtcharts qtlocation qtpositioning qtspeech qt5compat qtmultimedia qtserialport qtimageformats qtshadertools qtconnectivity qtquick3d
+          modules:      qtcharts qtlocation qtpositioning qtspeech qt5compat qtmultimedia qtserialport qtimageformats qtshadertools
           setup-python: false
-          cache: true
-
-      - name: Download JOM
-        uses: suisei-cn/actions-download-file@v1.6.0
-        with:
-          url:    http://download.qt.io/official_releases/jom/jom.zip
-          target: ${{ runner.temp }}\
-
-      - name: Unzip JOM
-        working-directory: ${{ runner.temp }}
-        run:  |
-              7z x jom.zip -ojom
-
-      - name: Download Gstreamer
-        uses: suisei-cn/actions-download-file@v1.6.0
-        with:
-          url:    https://s3-us-west-2.amazonaws.com/qgroundcontrol/dependencies/gstreamer-1.0-msvc-x86_64-1.18.1.msi
-          target: ${{ runner.temp }}\
-
-      - name: Download Gstreamer dev
-        uses: suisei-cn/actions-download-file@v1.6.0
-        with:
-          url:    https://s3-us-west-2.amazonaws.com/qgroundcontrol/dependencies/gstreamer-1.0-devel-msvc-x86_64-1.18.1.msi
-          target: ${{ runner.temp }}\
 
       - name: Install Gstreamer
-        run:  |
-            cmd /c start /wait msiexec /package ${{ runner.temp }}\gstreamer-1.0-msvc-x86_64-1.18.1.msi /passive ADDLOCAL=ALL
-            cmd /c start /wait msiexec /package ${{ runner.temp }}\gstreamer-1.0-devel-msvc-x86_64-1.18.1.msi /passive ADDLOCAL=ALL
+        run: |
+            wget https://gstreamer.freedesktop.org/data/pkg/osx/1.18.6/gstreamer-1.0-devel-1.18.6-x86_64.pkg
+            wget https://gstreamer.freedesktop.org/data/pkg/osx/1.18.6/gstreamer-1.0-1.18.6-x86_64.pkg
+            for package in *.pkg ;
+              do sudo installer -verbose -pkg "$package" -target /
+            done
 
-      - name: Set up Visual Studio shell
-        uses: ilammy/msvc-dev-cmd@v1
+      - name: Install ccache
+        run:  brew install ccache
+
+      - name: Prepare ccache timestamp
+        id: ccache_cache_timestamp
+        run: echo "name=timestamp::$(date --utc +'%Y-%m-%d-%H\;%M\;%S')" >> $GITHUB_OUTPUT
+
+      - name: ccache cache files
+        uses: actions/cache@v3
         with:
-          arch: x64
+          path:         ~/.ccache
+          key:          ${{ runner.os }}-ccache-${{steps.ccache_cache_timestamp.outputs.timestamp}}
+          restore-keys: ${{ runner.os }}-ccache-
+
+      - name: Setup ccache
+        run: |
+            mkdir -p ~/.ccache
+            echo "base_dir = ${GITHUB_WORKSPACE}" > ~/.ccache/ccache.conf
+            echo "compression = true" >> ~/.ccache/ccache.conf
+            echo "compression_level = 5" >> ~/.ccache/ccache.conf
+            ccache -s
+            ccache -z
 
       - name: Create build directory
-        run:  mkdir ${{ runner.temp }}\shadow_build_dir
+        run:  mkdir ${{ runner.temp }}/shadow_build_dir
 
       - name: Build
-        working-directory: ${{ runner.temp }}\shadow_build_dir
+        working-directory: ${{ runner.temp }}/shadow_build_dir
         run:  |
-              qmake -r ${{ env.SOURCE_DIR }}\qgroundcontrol.pro CONFIG+=installer CONFIG+=${{ env. BUILD_TYPE }}
-              ${{ runner.temp }}\jom\jom -j2
+              export JOBS=$((`sysctl -n hw.ncpu`+1))
+              qmake -r ${SOURCE_DIR}/qgroundcontrol.pro CONFIG+=installer CONFIG+=${BUILD_TYPE}
+              make -j$JOBS
 
-      - name: Upload Build File
-        uses: ./.github/actions/upload
+      - name: ccache post-run
+        run:  ccache -s
+
+      - name: Save artifact
+        uses: actions/upload-artifact@master
         with:
-          artifact_name: ${{ env.ARTIFACT }}
-          aws_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          source: 'staging'
+          name: ${ ARTIFACT }
+          path: ${{ runner.temp }}/shadow_build_dir
+
+      # - name: Upload build to S3 Bucket
+      #   if:                 github.event_name == 'push'
+      #   working-directory:  ${{ runner.temp }}/shadow_build_dir/package
+      #   run: |
+      #         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #         aws s3 cp ${ARTIFACT} s3://qgroundcontrol/builds/${{ github.ref_name }}/${ARTIFACT} --region us-west-2 --acl public-read
+
+      # - name: Upload tagged stable build to S3 latest Bucket
+      #   if:                 github.event_name == 'push' && github.ref_type == 'tag'
+      #   working-directory:  ${{ runner.temp }}/shadow_build_dir/package
+      #   run: |
+      #         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #         aws s3 cp ${ARTIFACT} s3://qgroundcontrol/latest/${ARTIFACT} --region us-west-2 --acl public-read
+      - name: Download artifact
+        uses: actions/download-artifact@master
+        with:
+          name: ${ ARTIFACT }

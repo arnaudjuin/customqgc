@@ -1,20 +1,8 @@
 name: MacOS Release
 
 on:
-  push:
-    branches:
-      - 'master'
-      - 'Stable*'
-      - 'feat/*'
-    tags:
-      - 'v*'
-    paths-ignore:
-      - 'docs/**'
-  pull_request:
-    branches:
-    - '*'
-    paths-ignore:
-      - 'docs/**'
+  workflow_dispatch:
+
 
 defaults:
   run:
@@ -80,9 +68,6 @@ jobs:
               export JOBS=$((`sysctl -n hw.ncpu`+1))
               qmake -r ${SOURCE_DIR}/qgroundcontrol.pro CONFIG+=installer CONFIG+=${BUILD_TYPE}
               make -j$JOBS
-
-      - name: ccache post-run
-        run:  ccache -s
 
       - name: Save artifact
         uses: actions/upload-artifact@master

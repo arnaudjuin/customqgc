@@ -1,20 +1,7 @@
 name: Windows Release
 
 on:
-  push:
-    branches:
-      - 'master'
-      - 'Stable*'
-      - 'feat/*'
-    tags:
-      - 'v*'
-    paths-ignore:
-      - 'docs/**'
-  pull_request:
-    branches:
-    - '*'
-    paths-ignore:
-      - 'docs/**'
+  workflow_dispatch:
 
 defaults:
   run:
@@ -107,9 +94,6 @@ jobs:
               qmake -r ${{ env.SOURCE_DIR }}\qgroundcontrol.pro CONFIG+=installer CONFIG+=${{ env. BUILD_TYPE }}
               ${{ runner.temp }}\jom\jom -j2
 
-      - name: ccache post-run
-        run:  ccache -s
-      
       - name: Save artifact
         uses: actions/upload-artifact@master
         with:

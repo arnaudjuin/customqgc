@@ -1,21 +1,8 @@
 name: Linux Release
 
 on:
-  push:
-    branches:
-      - 'master'
-      - 'Stable*'
-      - 'feat/*'
+  workflow_dispatch:
 
-    tags:
-      - 'v*'
-    paths-ignore:
-      - 'docs/**'
-  pull_request:
-    branches:
-    - '*'
-    paths-ignore:
-      - 'docs/**'
 
 defaults:
   run:
@@ -94,8 +81,6 @@ jobs:
               qmake -r ${SOURCE_DIR}/qgroundcontrol.pro CONFIG+=installer CONFIG+=${BUILD_TYPE}
               make -j2
 
-      - name: ccache post-run
-        run:  ccache -s
 
       - name: Create AppImage
         working-directory:  ${{ runner.temp }}/shadow_build_dir

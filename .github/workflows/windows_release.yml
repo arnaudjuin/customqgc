@@ -107,8 +107,8 @@ jobs:
               qmake -r ${{ env.SOURCE_DIR }}\qgroundcontrol.pro CONFIG+=installer CONFIG+=${{ env. BUILD_TYPE }}
               ${{ runner.temp }}\jom\jom -j2
 
-              - name: ccache post-run
-              run:  ccache -s
+      - name: ccache post-run
+        run:  ccache -s
       
       - name: Save artifact
         uses: actions/upload-artifact@master

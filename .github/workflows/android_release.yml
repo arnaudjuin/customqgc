@@ -2,7 +2,21 @@
 name: Android 32/64-bit Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - 'master'
+      - 'Stable*'
+      - 'feat/custom'
+    tags:
+      - 'v*'
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches:
+    - '*'
+    paths-ignore:
+      - 'docs/**'
+      - '.github/workflows/**'
 
 defaults:
   run:
@@ -103,6 +117,7 @@ jobs:
             ls /home/runner/work/_temp/Qt/6.6.1
             qmake -r ${SOURCE_DIR}/qgroundcontrol.pro -spec android-clang CONFIG+=${BUILD_TYPE} CONFIG+=installer ANDROID_ABIS="${{ matrix.eabi }}"
             make -j2
+
 
       - name: Save artifact
         uses: actions/upload-artifact@master

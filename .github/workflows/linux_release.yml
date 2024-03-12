@@ -1,8 +1,21 @@
 name: Linux Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - 'master'
+      - 'Stable*'
+      - 'feat/*'
 
+    tags:
+      - 'v*'
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches:
+    - '*'
+    paths-ignore:
+      - 'docs/**'
 
 defaults:
   run:
